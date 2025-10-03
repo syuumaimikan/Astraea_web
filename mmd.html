@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Babylon Template</title>
+
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+
+    <style>
+      [touch-action="none"] {
+        -ms-touch-action: none;
+        touch-action: none;
+      }
+      [touch-action="auto"] {
+        -ms-touch-action: auto;
+        touch-action: auto;
+      }
+      [touch-action="pan-x"] {
+        -ms-touch-action: pan-x;
+        touch-action: pan-x;
+      }
+      [touch-action="pan-y"] {
+        -ms-touch-action: pan-y;
+        touch-action: pan-y;
+      }
+      [touch-action="pan-x pan-y"],
+      [touch-action="pan-y pan-x"] {
+        -ms-touch-action: pan-x pan-y;
+        touch-action: pan-x pan-y;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="width: 100%; height: 100%; overflow: hidden">
+      <canvas
+        id="renderCanvas"
+        touch-action="none"
+        width="1366"
+        height="598"
+        data-engine="Babylon.js v8.30.1"
+        style="touch-action: none; -webkit-tap-highlight-color: transparent"
+        tabindex="1"
+      ></canvas>
+
+      <script src="https://cdn.babylonjs.com/babylon.js"></script>
+      <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+      <script src="https://www.unpkg.com/babylon-mmd/umd/babylon.mmd.min.js"></script>
+      <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+
+      <script>
+        const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+        const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+
+        const assetsPath = "assets/";
+        const pmxPath = assetsPath + "pmx/";
+        const pmxModel = pmxPath + "Black.pmx";
+
+        const vmdPath = assetsPath + "vmd/";
+        const vmdModel = vmdPath + "motion.vmd";
+
+        const wavPath = assetsPath + "vmd/";
+        const wavModel = wavPath + "music.mp3";
+
+        const camPath = assetsPath + "vmd/";
+        const camModel = camPath + "camera.vmd";
+
+        const offsetY = -100;
+
+        // Add your code here matching the playground format
+        const createScene = async function (engine) {
+          const scene = new BABYLON.Scene(engine);
+
+          // BABYLON.SceneLoader.ImportMeshAsync("", "https://assets.babylonjs.com/meshes/", "box.babylon");
+
+          //通常のカメラ
+          // const camera = new BABYLON.TargetCamera('TargetCamera', new BABYLON.Vector3(0, 10, -40), scene)
+          // camera.lockedTarget = new BABYLON.Vector3(0, 10, 0)
+
+          //MMDのカメラモーション
+          const camera = new BABYLONMMD.MmdCamera(
+            "mmdCamera",
+            new BABYLON.Vector3(0, 10, 0),
+            scene
+          );
+
+          const ground = BABYLON.MeshBuilder.CreateGround(
+            "Ground",
+            { width: 200, height: 200, subdivisions: 2, updatable: false },
+            scene
+          );
+          ground.receiveShadows = true;
+
+          const hemisphericLight = new BABYLON.HemisphericLight(
+            "HemisphericLight",
+            new BABYLON.Vector3(0, 10, -10),
+            scene
+          );
+          hemisphericLight.intensity = 0.3;
+          hemisphericLight.specular = new BABYLON.Color3(0, 0, 0);
+          hemisphericLight.groundColor = new BABYLON.Color3(1.1, 1.1, 1.1);
+
+          const shadowLight = new BABYLON.DirectionalLight(
+            "shadowLight",
+            new BABYLON.Vector3(-1, -2, 1),
+            scene
+          );
+          shadowLight.position = new BABYLON.Vector3(20, 100, 100);
+
+          const shadowGenerator = new BABYLON.ShadowGenerator(
+            1024,
+            shadowLight,
+            true
+          );
+          shadowGenerator.useBlurExponentialShadowMap = true;
+
+          shadowGenerator.blurKernel = 32;
+
+          const mmdMesh = await BABYLON.SceneLoader.ImportMeshAsync(
+            undefined,
+            pmxModel,
+            undefined,
+            scene
+          ).then((result) => result.meshes[0]);
+
+          shadowGenerator.addShadowCaster(mmdMesh);
+          mmdMesh.receiveShadows = true;
+
+          const vmdLoader = new BABYLONMMD.VmdLoader(scene);
+          const modelMotion = await vmdLoader.loadAsync(
+            "model_motion",
+            vmdModel
+          );
+
+          const havokInstance = await HavokPhysics();
+          const havokPlugin = new BABYLON.HavokPlugin(true, havokInstance);
+          scene.enablePhysics(new BABYLON.Vector3(0, -9.8 * 5, 0), havokPlugin);
+
+          const mmdRuntime = new BABYLONMMD.MmdRuntime(
+            scene,
+            new BABYLONMMD.MmdPhysics(scene)
+          );
+          mmdRuntime.register(scene);
+          const mmdModel = mmdRuntime.createMmdModel(mmdMesh);
+
+          mmdModel.addAnimation(modelMotion);
+          mmdModel.setAnimation("model_motion");
+
+          mmdRuntime.setCamera(camera);
+          const cameraMotion = await vmdLoader.loadAsync(
+            "camera_motion",
+            camModel
+          );
+          camera.addAnimation(cameraMotion);
+          camera.setAnimation("camera_motion");
+
+          const audioPlayer = new BABYLONMMD.StreamAudioPlayer(scene);
+          audioPlayer.preservesPitch = false;
+          audioPlayer.source = wavModel;
+
+          mmdRuntime.setAudioPlayer(audioPlayer);
+
+          mmdRuntime.playAnimation();
+
+          const mmdPlayerControl = new BABYLONMMD.MmdPlayerControl(
+            scene,
+            mmdRuntime,
+            audioPlayer
+          );
+          mmdPlayerControl.showPlayerControl();
+
+          return scene;
+        };
+
+        (async function () {
+          canvas.focus();
+          const scene = await createScene(engine); //Call the createScene function
+
+          // Register a render loop to repeatedly render the scene
+          engine.runRenderLoop(async function () {
+            scene.render();
+          });
+
+          // Watch for browser/canvas resize events
+          window.addEventListener("resize", function () {
+            engine.resize();
+          });
+        })();
+      </script>
+      <div
+        style="
+          position: relative;
+          bottom: 120px;
+          left: 0px;
+          width: 100%;
+          height: 120px;
+          transform: translateY(0px);
+          transition: transform 0.5s;
+        "
+      >
+        <div
+          style="
+            position: absolute;
+            bottom: 0px;
+            left: 0px;
+            width: 100%;
+            height: 50%;
+            box-sizing: border-box;
+            background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.6));
+            display: flex;
+            flex-direction: column;
+          "
+        >
+          <div
+            style="
+              width: 100%;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+            "
+          >
+            <input
+              type="range"
+              min="0"
+              max="6503"
+              style="width: 100%; height: 4px; border: none; opacity: 0.5"
+            />
+          </div>
+          <div
+            style="
+              width: 100%;
+              flex-grow: 1;
+              padding: 0px 5px;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: row;
+            "
+          >
+            <div
+              style="
+                flex: 1 1 0%;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+              "
+            >
+              <button
+                style="
+                  width: 40px;
+                  border: none;
+                  background-color: rgba(0, 0, 0, 0);
+                  color: white;
+                  font-size: 18px;
+                "
+              >
+                ❚❚</button
+              ><button
+                style="
+                  width: 35px;
+                  border: none;
+                  background-color: rgba(0, 0, 0, 0);
+                  color: white;
+                  font-size: 20px;
+                "
+              >
+                🔊</button
+              ><input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                style="width: 80px; height: 4px; border: none; opacity: 0.5"
+              /><span style="width: 40px; text-align: right; color: white"
+                >0:18</span
+              ><span style="width: 50px; text-align: left; color: white"
+                >&nbsp;/&nbsp;3:36</span
+              >
+            </div>
+            <div
+              style="
+                flex: 1 1 0%;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+              "
+            >
+              <label style="width: 40px; text-align: center; color: white"
+                >1.00x</label
+              ><input
+                type="range"
+                min="0.07"
+                max="1"
+                step="0.01"
+                style="width: 80px; height: 4px; border: none; opacity: 0.5"
+              /><button
+                style="
+                  width: 40px;
+                  border: none;
+                  color: white;
+                  background-color: rgba(0, 0, 0, 0);
+                  font-size: 20px;
+                "
+              >
+                🗖
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
