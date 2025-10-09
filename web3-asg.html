@@ -1,270 +1,72 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Astraea</title>
-    <style>
-      html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Helvetica Neue", sans-serif;
-        background-color: #000000;
-      }
-      #label {
-        color: white;
-        position: absolute;
-        font-size: 64px;
-        font-family: "Helvetica Neue";
-        font-weight: 100;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
-      .fade-in-element {
-        opacity: 0; /* 初期状態：非表示 */
-        transition: opacity 0.5s ease-in-out; /* アニメーションの速度と種類 */
-      }
 
-      .fade-in-element.is-visible {
-        opacity: 1; /* 表示された状態 */
-        display: block;
-      }
-      #main-content {
-        width: 100vw;
-        height: 100vh;
-        top: 0;
-        left: 0;
-        z-index: 1;
-        overflow: hidden;
-      }
-      #overlay {
-        color: white;
-        position: absolute;
-        font-size: 32px;
-        font-family: "Helvetica Neue";
-        font-weight: 100;
-        top: 90%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
-    </style>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  </head>
-  <body>
-    <!-- ローディング画面 -->
-    <div id="loading">
-      <div id="label" class="fade-in-element">Astraea</div>
+<head>
+  <meta charset="utf-8" />
+  <title>Astraea</title>
+  <link rel="stylesheet" href="web3-asg.css">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+
+<body>
+  <!-- ローディング画面 -->
+  <div id="loading">
+      <div id="label" class="fade-in-element">Welcome</div>
+      <div id="load-content">
+        <canvas id="particleCanvas"></canvas>
+        <div id="overlay">Please Click</div>
+      </div>
     </div>
-    <!-- サイト本体（ここにコンテンツが入る） -->
-    <div id="main-content">
-      <!-- 本文など -->
-      <canvas id="particleCanvas"></canvas>
-      <div id="overlay">Please Click</div>
-      <script>
-      const canvas = document.getElementById("particleCanvas");
-      const mainContent = document.getElementById("main-content");
-      const overlay = document.getElementById("overlay");
-      // ロード開始時刻を取得
-      const loadingStart = Date.now();
-      window.addEventListener("load", function () {
-        const label = document.getElementById("label");
-        const elapsed = Date.now() - loadingStart;
-        const minTime = 3000; // 3秒（3000ミリ秒）
-        label.classList.add("is-visible");
-
-        setInterval(() => {
-          if(!clicked){
-          $("#overlay").fadeToggle(1000);
-          }
-        }, 1000);
-        // フェードアウト後にdisplay: noneを設定
-        label.addEventListener("transitionend", function () {
-          if (!label.classList.contains("is-visible")) {
-            label.style.display = "none";
-            label.style.pointerEvents = "none";
-          }
-        });
-        if (elapsed < minTime) {
-          setTimeout(() => {
-            label.classList.remove("is-visible");
-          }, minTime - elapsed);
-        } else {
-          label.classList.remove("is-visible");
-        }
-      });
-
-      class StarParticle {
-        constructor(canvas, options = {}) {
-          this.canvas = canvas;
-          this.ctx = canvas.getContext("2d");
-          this.particles = [];
-          this.options = {
-            particleCount: options.particleCount || 200,
-            particleSize: options.particleSize || 1,
-            particleColor: options.particleColor || "#ffffff",
-            twinkleSpeed: options.twinkleSpeed || 0.02,
-            starDepth: options.starDepth || 1000, // 星の奥行き
-            ...options,
-          };
-          this.lastScrollY = window.scrollY;
-          this.scrollSpeed = 0;
-
-          this.init();
-        }
-
-        init() {
-          this.resize();
-          this.createParticles();
-          this.animate();
-
-          window.addEventListener("resize", () => this.resize());
-        }
-
-        resize() {
-          this.canvas.width = window.innerWidth;
-          this.canvas.height = window.innerHeight;
-          this.centerX = this.canvas.width / 2;
-          this.centerY = this.canvas.height / 2;
-        }
-
-        createParticles() {
-          this.particles = [];
-          for (let i = 0; i < this.options.particleCount; i++) {
-            this.particles.push(this.createParticle());
-          }
-        }
-
-        createParticle() {
-          // 星を球状にランダム配置
-          const angle = Math.random() * 2 * Math.PI;
-          const radius = Math.random() * this.canvas.width * 0.5;
-          // 中心を避けるための最小半径を指定（例：50px）
-          const minCenterRadius = 50;
-
-          // 中心からの距離が小さい星は再生成する（再帰呼び出し）
-          if (radius < minCenterRadius) {
-            return this.createParticle(); // やり直し
-          }
-          return {
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius,
-            z: Math.random() * this.options.starDepth,
-            prevZ: null,
-            size: Math.random() * this.options.particleSize + 0.5,
-            opacity: Math.random() * 0.8 + 0.2,
-            twinkleDirection: Math.random() > 0.5 ? 1 : -1,
-          };
-        }
-
-        updateParticles() {
-          // スクロール速度に応じてzを減らす
-          for (const p of this.particles) {
-            p.prevZ = p.z;
-            p.z -= this.scrollSpeed * 10 + 2; // スクロールで加速、+2で常に動く
-            if (p.z <= 1) {
-              // 奥に戻す
-              Object.assign(p, this.createParticle());
-              p.z = this.options.starDepth;
-              p.prevZ = p.z + 10;
-            }
-          }
-        }
-
-        drawParticles() {
-          const { width, height } = this.canvas;
-          this.ctx.clearRect(0, 0, width, height);
-
-          for (const p of this.particles) {
-            // 3D→2D変換
-            const scale = 500 / p.z;
-            const x = this.centerX + p.x * scale;
-            const y = this.centerY + p.y * scale;
-
-            // 線を描画（前フレーム位置→現在位置）
-            if (p.prevZ) {
-              const prevScale = 500 / p.prevZ;
-              const prevX = this.centerX + p.x * prevScale;
-              const prevY = this.centerY + p.y * prevScale;
-              this.ctx.strokeStyle = `rgba(255,255,255,${p.opacity})`;
-              this.ctx.lineWidth = p.size * scale;
-              this.ctx.beginPath();
-              this.ctx.moveTo(prevX, prevY);
-              this.ctx.lineTo(x, y);
-              this.ctx.stroke();
-            }
-
-            // 星本体
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, p.size * scale, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
-            this.ctx.fill();
-          }
-        }
-
-        animate() {
-          this.updateParticles();
-          this.drawParticles();
-          requestAnimationFrame(() => this.animate());
-        }
-        // スクロール速度をセット 
-        setScrollSpeed(speed) { this.scrollSpeed = speed;
-        }
-      }
-
-      let starParticleInstance = null;
-      let lastScrollY = window.scrollY;
-      let lastTimestamp = performance.now();
-      let speed = 0;
-      let accelerateInterval = null;
-      let clicked = false;
-      let wait_time = 0;
-      const handleClick = () => {
-        if (!clicked) {
-          overlay.style.display = "none";
-          overlay.style.pointerEvents = "none";
-          clicked = true;
-          speed = 0;
-
-          let accelerateInterval = setInterval(() => {
-            speed = parseFloat(speed.toFixed(1));
-            if (speed >= 2) {
-              clearInterval(accelerateInterval);
-              return;
-            }
-
-            console.log(`speed: ${speed}`);
-            speed += 0.1;
-
-            if (starParticleInstance) {
-              starParticleInstance.setScrollSpeed(speed);
-            }
-          }, 100); // 100msごとに
-          setInterval(()=>{
-            if (speed >= 1.9) {
-              wait_time += 1;
-              console.log(`wait_time: ${wait_time}`);
-
-              if (wait_time >= 2) {
-                $("#particleCanvas").fadeOut(3000);
-              }
-            }
-          },1000) // 1000ms = 1sごとに
-        }
-      };
-      document.getElementById("main-content").addEventListener("click", handleClick);
-      // 初期化
-      document.addEventListener("DOMContentLoaded", () => {
-        starParticleInstance = new StarParticle(canvas, {
-          particleCount: 500,
-          particleSize: 0.1,
-          particleColor: "#ffffff",
-          twinkleSpeed: 0.02,
-          starDepth: 1000,
-        });
-      });
-    </script>
-    </body>
-  </html>
+  <!-- 本文など -->
+  <div id="main-content">
+    <div class="profile">
+      <div class="css-i38dq">
+        <div class="css-8j9des">
+          <img alt="syuumaimikan-icon" style="
+                  object-fit: cover;
+                  opacity: 1;
+                  background-color: var(--color-screen-bg-primary);
+                " class="css-n56ohr" src="https://avatars.githubusercontent.com/u/125124170?v=4" />
+        </div>
+        <div class="css-chr1eq">
+          <h3 class="css-1pihaei">syuumaimikan</h3>
+          <p class="css-6c226p">@syuumaimikan</p>
+        </div>
+      </div>
+      <p class="css-eebxk9">
+        syuumaimikan<span></span>です。<br />静岡県出身。2008年5月3日生まれ<span>（17歳）</span><br /><br />いろいろやっています。<br />仕事をください。
+      </p>
+      <div class="css-4ddxa2">
+        <a href="https://x.com/syuumaimikan" target="_blank" rel="noopener noreferrer" class="css-1v0ykjc"><svg
+            viewBox="0 0 1200 1227" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z"
+              fill="black" />
+          </svg></a><a href="https://github.com/syuumaimikan" target="_blank" rel="noopener noreferrer"
+          class="css-1v0ykjc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+            <path
+              d="M12 1C5.923 1 1 5.923 1 12c0 4.867 3.149 8.979 7.521 10.436.55.096.756-.233.756-.522 0-.262-.013-1.128-.013-2.049-2.764.509-3.479-.674-3.699-1.292-.124-.317-.66-1.293-1.127-1.554-.385-.207-.936-.715-.014-.729.866-.014 1.485.797 1.691 1.128.99 1.663 2.571 1.196 3.204.907.096-.715.385-1.196.701-1.471-2.448-.275-5.005-1.224-5.005-5.432 0-1.196.426-2.186 1.128-2.956-.111-.275-.496-1.402.11-2.915 0 0 .921-.288 3.024 1.128a10.193 10.193 0 0 1 2.75-.371c.936 0 1.871.123 2.75.371 2.104-1.43 3.025-1.128 3.025-1.128.605 1.513.221 2.64.111 2.915.701.77 1.127 1.747 1.127 2.956 0 4.222-2.571 5.157-5.019 5.432.399.344.743 1.004.743 2.035 0 1.471-.014 2.654-.014 3.025 0 .289.206.632.756.522C19.851 20.979 23 16.854 23 12c0-6.077-4.922-11-11-11Z">
+            </path>
+          </svg></a>
+      </div>
+    </div>
+    <hr>
+    <div class="art-work">
+      <div class="3d-cg">
+        <h1>3D CG</h1>
+        <p>Made with Blender</p>
+        <ul>
+          <li><img src="./assets/blender/木漏れ日.png" alt="木漏れ日">木漏れ日</li>
+          <li><img src="./assets/blender/水墨画.png" alt="水墨画">水墨画</li>
+          <li><img src="./assets/blender/紅葉の森.png" alt="紅葉の森">朝焼け</li>
+          <li><img src="./assets/blender/墓.png" alt="墓">墓</li>
+          <li><img src="./assets/blender/ソファー.png" alt="ソファー">ソファー</li>
+          <li><img src="./assets/blender/オーロラ.png" alt="オーロラ">オーロラ</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  </div>
+<script src="web3-asg.js"></script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;600&display=swap");
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  background-color: #000;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* ===== ローディング画面 ===== */
+#loading {
+  position: fixed;
+  inset: 0;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#label {
+  color: white;
+  position: absolute;
+  font-size: 64px;
+  font-family: "Helvetica Neue";
+  font-weight: 100;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.fade-in-element {
+  opacity: 0; /* 初期状態：非表示 */
+  transition: opacity 0.5s ease-in-out; /* アニメーションの速度と種類 */
+}
+
+.fade-in-element.is-visible {
+  opacity: 1; /* 表示された状態 */
+  display: block;
+}
+
+#overlay {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  font-weight: 100;
+  color: rgba(255, 255, 255, 0.8);
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ===== メインコンテンツ（カード） ===== */
+#main-content {
+  display: none;
+  width: 90%;
+  max-width: 680px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  padding: 48px 40px;
+  border-radius: 24px;
+  box-shadow: 0 8px 40px rgba(255, 255, 255, 0.08);
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  margin: 100px auto;
+  color: #f1f1f1;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+#main-content:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 60px rgba(255, 255, 255, 0.1);
+}
+
+/* ===== プロフィールエリア ===== */
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.css-i38dq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.css-n56ohr {
+  border-radius: 50%;
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+  transition: transform 0.4s ease;
+}
+
+.css-n56ohr:hover {
+  transform: scale(1.08);
+}
+
+/* 名前とユーザーID */
+.css-chr1eq {
+  text-align: left;
+}
+
+.css-1pihaei {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 4px 0;
+}
+
+.css-6c226p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* 自己紹介文 */
+.css-eebxk9 {
+  font-size: 17px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 24px;
+}
+
+/* ===== SNSアイコン ===== */
+.css-4ddxa2 {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.css-4ddxa2 a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  width: 48px;
+  height: 48px;
+  box-shadow: 0 3px 6px rgba(255, 255, 255, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.css-4ddxa2 a:hover {
+  transform: scale(1.15);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+}
+
+.css-4ddxa2 svg {
+  fill: #000;
+  width: 24px;
+  height: 24px;
+}
+
+/* ===== セクション ===== */
+#main-content h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 8px;
+  text-align: center;
+}
+
+#main-content p,
+#main-content ul {
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+#main-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ===== 3D作品リスト ===== */
+#main-content li {
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#main-content li img {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.4s ease;
+}
+
+#main-content li img:hover {
+  transform: scale(1.03);
+}
+
+/* ===== スマホ対応 ===== */
+@media (max-width: 600px) {
+  #main-content {
+    padding: 32px 24px;
+    margin: 60px auto;
+  }
+  .css-n56ohr {
+    width: 110px;
+    height: 110px;
+  }
+  .css-1pihaei {
+    font-size: 22px;
+  }
+  .css-eebxk9 {
+    font-size: 15px;
+  }
+  #main-content li img {
+    max-width: 100%;
+  }
+}
